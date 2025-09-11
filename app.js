@@ -13,14 +13,13 @@
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 let toastTimeout;
-const toast = (msg, sel = "#toast") => {
-  const el = $(sel);
+const toast = (msg) => {
+  const el = $("#toast");
   el.textContent = msg;
   const showCls = "show";
-  const isShown = el.classList.contains(showCls);
-  if (isShown) {
+  if (el.classList.contains(showCls)) {
     el.classList.remove(showCls);
-    void el.offsetWidth; // force reflow
+    void el.offsetWidth; // restart animation
   }
   el.classList.add(showCls);
   clearTimeout(toastTimeout);

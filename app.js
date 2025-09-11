@@ -13,15 +13,18 @@
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 let toastTimeout;
-const toast = (msg) => {
-  const el = $("#toast");
+const toast = (msg, sel = "#toast") => {
+  const el = $(sel);
   el.textContent = msg;
-  // restart animation even if toast already visible
-  el.classList.remove("show");
-  void el.offsetWidth; // force reflow
-  el.classList.add("show");
+  const showCls = "show";
+  const isShown = el.classList.contains(showCls);
+  if (isShown) {
+    el.classList.remove(showCls);
+    void el.offsetWidth; // force reflow
+  }
+  el.classList.add(showCls);
   clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => el.classList.remove("show"), 1800);
+  toastTimeout = setTimeout(() => el.classList.remove(showCls), 1800);
 };
 
 /* -------------------- THEME -------------------- */

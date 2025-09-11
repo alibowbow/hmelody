@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>마음의 선율 · Prototype Studio v2</title>
+  <meta name="description" content="일기를 시·음악·배경으로 변환하고, 감정 기반 다이어리를 제공하는 Heart's Melody v2" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🎵</div>
+      <div class="title">마음의 선율 <span class="badge">Prototype v2</span></div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Main sections">
+      <button class="tab" data-target="#diary" role="tab" aria-selected="false">Diary</button>
+      <button class="tab active" data-target="#studio" role="tab" aria-selected="true">Studio</button>
+      <button class="tab" data-target="#calendar" role="tab" aria-selected="false">Calendar</button>
+      <button class="tab" data-target="#archive" role="tab" aria-selected="false">Archive</button>
+      <button class="tab" data-target="#insights" role="tab" aria-selected="false">Insights</button>
+      <button class="tab" data-target="#data" role="tab" aria-selected="false">Data</button>
+    </nav>
+    <div class="actions">
+      <button id="themeToggle" class="icon-btn" title="테마 전환">🌓</button>
+      <a id="exportProject" class="pill-btn secondary" download="hearts-melody-project.json" href="#">Export</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Diary -->
+    <section id="diary" class="panel" role="tabpanel" aria-labelledby="Diary">
+      <div class="grid-2">
+        <!-- Diary Composer -->
+        <div class="card">
+          <div class="card-head">
+            <h2>📔 감정 다이어리</h2>
+            <div class="microcopy">플루치크 8대 기본 감정 + 강도 선택, 메모와 함께 기록합니다.</div>
+          </div>
+
+          <div id="emotionSelector" class="emotion-grid" aria-label="감정 선택"></div>
+
+          <div class="intensity-row" id="intensityRow" hidden>
+            <div class="microcopy">강도를 골라주세요:</div>
+            <div class="intensity-buttons" id="intensityButtons"></div>
+          </div>
+
+          <div class="composer-row">
+            <label class="full">
+              <span class="label">AI 응답 어조</span>
+              <select id="aiTone">
+                <option value="default">AI 자동 선택</option>
+                <option value="warm">따뜻하게</option>
+                <option value="encouraging">격려하며</option>
+                <option value="humorous">재치있게</option>
+                <option value="insightful">통찰력 있게</option>
+              </select>
+            </label>
+            <label class="full">
+              <span class="label">감정 노트</span>
+              <textarea id="memo" rows="6" placeholder="오늘의 감정과 상황을 적어보세요. (Enter로 줄바꿈, Ctrl/Cmd+Enter로 저장)"></textarea>
+            </label>
+          </div>
+
+          <div class="btn-row">
+            <button id="saveDiary" class="pill-btn primary">💖 감정 기록 + AI 응답</button>
+            <button id="clearDiary" class="pill-btn">🧹 초기화</button>
+          </div>
+
+          <div id="aiResponseBox" class="ai-box" hidden>
+            <div class="ai-title">🤖 AI 마음 친구</div>
+            <div id="aiResponse" class="ai-body"></div>
+          </div>
+        </div>
+
+        <!-- Diary List -->
+        <div class="card">
+          <div class="card-head">
+            <h2>🗂️ 나의 감정 기록</h2>
+            <div class="microcopy">월별로 필터링하고, 수정/삭제할 수 있어요.</div>
+          </div>
+
+          <div class="filter-row">
+            <label>조회 기간
+              <select id="yearMonthFilter">
+                <option value="">전체</option>
+              </select>
+            </label>
+            <div class="spacer"></div>
+            <button id="clearFilter" class="pill-btn small">필터 해제</button>
+          </div>
+
+          <div id="entriesList" class="entries-list" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Studio (existing) -->
+    <section id="studio" class="panel active" role="tabpanel" aria-labelledby="Studio">
+      <div class="grid-2">
+        <!-- Left: Editor -->
+        <div class="card">
+          <div class="card-head">
+            <h2>📝 스마트 일기 에디터</h2>
+            <div class="microcopy">타이핑과 동시에 감정 분석이 적용돼요.</div>
+          </div>
+
+          <div class="editor-toolbar">
+            <button id="dictateBtn" class="pill-btn">🎙️ 음성 입력</button>
+            <div class="select-row">
+              <label>시 스타일
+                <select id="poemStyle">
+                  <option value="free">자유시</option>
+                  <option value="haiku">하이쿠</option>
+                  <option value="sonnet">소네트(14행)</option>
+                  <option value="lyric">서정시</option>
+                  <option value="rap">랩 가사</option>
+                </select>
+              </label>
+              <label>음악 장르
+                <select id="musicGenre">
+                  <option value="lofi">Lo‑Fi</option>
+                  <option value="ambient">Ambient</option>
+                  <option value="piano">Piano</option>
+                  <option value="synth">Synthwave</option>
+                </select>
+              </label>
+              <label>길이(초)
+                <input type="number" id="musicLen" min="5" max="30" step="5" value="15" />
+              </label>
+            </div>
+          </div>
+
+          <textarea id="diary" rows="10" placeholder="오늘 하루를 편하게 적어보세요. 감정, 사건, 떠오르는 이미지…"></textarea>
+
+          <div class="metrics">
+            <div class="metric">
+              <canvas id="gauge" width="110" height="110" aria-label="감정 게이지"></canvas>
+              <div class="metric-label">
+                <div class="metric-title">감정</div>
+                <div id="emotionText" class="metric-value">분석 중…</div>
+              </div>
+            </div>
+            <div class="metric" style="flex:2">
+              <div class="metric-label">
+                <div class="metric-title">키워드</div>
+                <div id="keywords" class="chips"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button id="genPoem" class="pill-btn primary">✨ 시 생성</button>
+            <button id="genMusic" class="pill-btn primary">🎵 음악 생성</button>
+            <button id="genVisual" class="pill-btn">🖼️ 배경 생성</button>
+            <button id="saveWork" class="pill-btn success">💾 작품 저장</button>
+          </div>
+        </div>
+
+        <!-- Right: Live Preview -->
+        <div class="card preview">
+          <div class="preview-stage">
+            <canvas id="bgCanvas" width="1200" height="675" aria-label="비주얼 배경"></canvas>
+            <div class="poem">
+              <div class="poem-title" id="poemTitle">제목 미정</div>
+              <pre id="poemOutput" class="poem-body">시가 여기에 표시됩니다.</pre>
+            </div>
+          </div>
+          <div class="player">
+            <audio id="audioPlayer" controls preload="metadata"></audio>
+            <div class="player-actions">
+              <button id="downloadPNG" class="pill-btn">🖼️ PNG 내보내기</button>
+              <button id="downloadWAV" class="pill-btn">💿 WAV 다운로드</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Calendar -->
+    <section id="calendar" class="panel" role="tabpanel" aria-labelledby="Calendar">
+      <div class="card">
+        <div class="card-head">
+          <h2>🗓️ 감정 캘린더</h2>
+          <div class="microcopy">하루에 하나의 대표 감정을 표시합니다. 날짜를 클릭해 상세 기록을 확인하세요.</div>
+        </div>
+        <div class="calendar-head">
+          <button id="prevMonth" class="pill-btn small">◀ 이전</button>
+          <div id="calendarTitle" class="cal-title"></div>
+          <button id="nextMonth" class="pill-btn small">다음 ▶</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid" aria-label="감정 캘린더"></div>
+        <div id="calendarDayDetail" class="day-detail" hidden>
+          <div class="day-detail-head">
+            <div class="day-detail-title" id="dayDetailTitle"></div>
+            <button id="closeDayDetail" class="icon-btn">✖</button>
+          </div>
+          <div id="dayEntries" class="entries-list compact"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Archive -->
+    <section id="archive" class="panel" role="tabpanel" aria-labelledby="Archive">
+      <div class="card">
+        <div class="card-head">
+          <h2>📚 내 작품 아카이브</h2>
+          <div class="microcopy">로컬 스토리지에 저장됩니다. 브라우저를 옮기면 데이터가 보이지 않을 수 있어요.</div>
+        </div>
+        <div id="worksGrid" class="works-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- Insights -->
+    <section id="insights" class="panel" role="tabpanel" aria-labelledby="Insights">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h2>📊 감정 트렌드 & 통계</h2>
+            <div class="microcopy">최근 세션에서 감정 값과 다이어리 패턴을 보여줍니다.</div>
+          </div>
+          <canvas id="trendChart" width="900" height="300" aria-label="감정 트렌드 차트"></canvas>
+          <div class="tiles" id="statsTiles"></div>
+          <div class="subcharts">
+            <canvas id="freqChart" width="900" height="220" aria-label="기본 감정 빈도"></canvas>
+            <div id="dotMap" class="dot-map" aria-label="최근 30일 도트맵"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h2>🔎 창작 인사이트</h2>
+          </div>
+          <ul class="insight-list" id="insightList"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data -->
+    <section id="data" class="panel" role="tabpanel" aria-labelledby="Data">
+      <div class="card">
+        <div class="card-head">
+          <h2>🧰 데이터 백업/복원</h2>
+          <div class="microcopy">모든 데이터는 로컬에만 저장됩니다. JSON으로 내보내고 다시 불러올 수 있어요.</div>
+        </div>
+        <div class="btn-row wrap">
+          <button id="backupBtn" class="pill-btn success">⬇️ 다이어리 백업(.json)</button>
+          <input type="file" id="restoreInput" accept=".json" hidden />
+          <button id="restoreBtn" class="pill-btn">⬆️ 다이어리 복원(.json)</button>
+        </div>
+        <div class="microcopy">주의: 복원 시 현재 저장된 다이어리 데이터는 선택한 파일로 덮어쓰기 됩니다.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div>
+      <strong>Heart's Melody</strong> · 개인정보는 로컬에만 저장되는 데모입니다.
+    </div>
+    <div class="small">© 2025 Heart's Melody Prototype v2</div>
+  </footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-content">
+      <div class="modal-head">
+        <div class="modal-title">기록 수정</div>
+        <button id="modalClose" class="icon-btn">✖</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalEmotion" class="emotion-grid compact"></div>
+        <div class="intensity-row" id="modalIntensityRow" hidden>
+          <div class="microcopy">강도 다시 선택:</div>
+          <div class="intensity-buttons" id="modalIntensityButtons"></div>
+        </div>
+        <label class="full">
+          <span class="label">감정 노트</span>
+          <textarea id="modalMemo" rows="6"></textarea>
+        </label>
+        <label class="full">
+          <span class="label">AI 어조</span>
+          <select id="modalTone">
+            <option value="default">AI 자동 선택</option>
+            <option value="warm">따뜻하게</option>
+            <option value="encouraging">격려하며</option>
+            <option value="humorous">재치있게</option>
+            <option value="insightful">통찰력 있게</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button id="modalCancel" class="pill-btn">취소</button>
+        <button id="modalSave" class="pill-btn primary">변경사항 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

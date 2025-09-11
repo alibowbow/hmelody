@@ -13,10 +13,12 @@
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 const toast = (() => {
-  const el = document.getElementById("toast");
   const showCls = "show";
+  let el;
   let timeout;
-  return (msg) => {
+  return (msg, selector = "#toast") => {
+    el = document.querySelector(selector);
+    if (!el) return;
     el.textContent = msg;
     if (el.classList.contains(showCls)) {
       el.classList.remove(showCls);

@@ -12,7 +12,14 @@
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-const toast = (msg) => { const el = $("#toast"); el.textContent = msg; el.classList.add("show"); setTimeout(()=> el.classList.remove("show"), 1800); };
+let toastTimeout;
+const toast = (msg) => {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => el.classList.remove("show"), 1800);
+};
 
 /* -------------------- THEME -------------------- */
 (() => {

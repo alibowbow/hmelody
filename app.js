@@ -12,19 +12,21 @@
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-let toastTimeout;
-const toast = (msg) => {
-  const el = $("#toast");
-  el.textContent = msg;
+const toast = (() => {
+  const el = document.getElementById("toast");
   const showCls = "show";
-  if (el.classList.contains(showCls)) {
-    el.classList.remove(showCls);
-    void el.offsetWidth; // restart animation
-  }
-  el.classList.add(showCls);
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => el.classList.remove(showCls), 1800);
-};
+  let timeout;
+  return (msg) => {
+    el.textContent = msg;
+    if (el.classList.contains(showCls)) {
+      el.classList.remove(showCls);
+      void el.offsetWidth; // restart animation
+    }
+    el.classList.add(showCls);
+    clearTimeout(timeout);
+    timeout = setTimeout(() => el.classList.remove(showCls), 1800);
+  };
+})();
 
 /* -------------------- THEME -------------------- */
 (() => {

@@ -1,38 +1,42 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>마음의 선율 · Prototype Studio v2</title>
-  <meta name="description" content="일기를 시·음악·배경으로 변환하고, 감정 기반 다이어리를 제공하는 Heart's Melody v2" />
+  <title>마음의 선율 · Heart's Melody</title>
+  <meta name="description" content="일기를 시·음악·배경으로 변환하고, 감정 기반 다이어리를 제공하는 Heart's Melody" />
+  <meta name="color-scheme" content="dark light" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <!-- Load web fonts without blocking render/scripts: app boots on system fonts,
+       then swaps in Inter/Playfair when (and if) the CDN responds. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"></noscript>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="logo">🎵</div>
-      <div class="title">마음의 선율 <span class="badge">Prototype v2</span></div>
+      <div class="logo" aria-hidden="true">🎵</div>
+      <div class="title">마음의 선율 <span class="badge">Heart's Melody</span></div>
     </div>
-    <nav class="tabs" role="tablist" aria-label="Main sections">
-      <button class="tab" data-target="#diary" role="tab" aria-selected="false">Diary</button>
-      <button class="tab active" data-target="#studio" role="tab" aria-selected="true">Studio</button>
-      <button class="tab" data-target="#calendar" role="tab" aria-selected="false">Calendar</button>
-      <button class="tab" data-target="#archive" role="tab" aria-selected="false">Archive</button>
-      <button class="tab" data-target="#insights" role="tab" aria-selected="false">Insights</button>
-      <button class="tab" data-target="#data" role="tab" aria-selected="false">Data</button>
+    <nav class="tabs" role="tablist" aria-label="주요 섹션">
+      <button class="tab active" data-target="#diary" id="tab-diary" role="tab" aria-selected="true" aria-controls="diary">Diary</button>
+      <button class="tab" data-target="#studio" id="tab-studio" role="tab" aria-selected="false" aria-controls="studio">Studio</button>
+      <button class="tab" data-target="#calendar" id="tab-calendar" role="tab" aria-selected="false" aria-controls="calendar">Calendar</button>
+      <button class="tab" data-target="#archive" id="tab-archive" role="tab" aria-selected="false" aria-controls="archive">Archive</button>
+      <button class="tab" data-target="#insights" id="tab-insights" role="tab" aria-selected="false" aria-controls="insights">Insights</button>
+      <button class="tab" data-target="#data" id="tab-data" role="tab" aria-selected="false" aria-controls="data">Data</button>
     </nav>
     <div class="actions">
-      <button id="themeToggle" class="icon-btn" title="테마 전환">🌓</button>
-      <a id="exportProject" class="pill-btn secondary" download="hearts-melody-project.json" href="#">Export</a>
+      <button id="themeToggle" class="icon-btn" title="테마 전환" aria-label="라이트/다크 테마 전환">🌓</button>
+      <button id="exportProject" class="pill-btn secondary">Export</button>
     </div>
   </header>
 
   <main class="container">
     <!-- Diary -->
-    <section id="diary" class="panel" role="tabpanel" aria-labelledby="Diary">
+    <section id="diary" class="panel active" role="tabpanel" aria-labelledby="tab-diary">
       <div class="grid-2">
         <!-- Diary Composer -->
         <div class="card">
@@ -41,11 +45,11 @@
             <div class="microcopy">플루치크 8대 기본 감정 + 강도 선택, 메모와 함께 기록합니다.</div>
           </div>
 
-          <div id="emotionSelector" class="emotion-grid" aria-label="감정 선택"></div>
+          <div id="emotionSelector" class="emotion-grid" role="group" aria-label="기본 감정 선택"></div>
 
           <div class="intensity-row" id="intensityRow" hidden>
             <div class="microcopy">강도를 골라주세요:</div>
-            <div class="intensity-buttons" id="intensityButtons"></div>
+            <div class="intensity-buttons" id="intensityButtons" role="group" aria-label="감정 강도 선택"></div>
           </div>
 
           <div class="composer-row">
@@ -98,8 +102,8 @@
       </div>
     </section>
 
-    <!-- Studio (existing) -->
-    <section id="studio" class="panel active" role="tabpanel" aria-labelledby="Studio">
+    <!-- Studio -->
+    <section id="studio" class="panel" role="tabpanel" aria-labelledby="tab-studio">
       <div class="grid-2">
         <!-- Left: Editor -->
         <div class="card">
@@ -145,7 +149,7 @@
               </div>
             </div>
             <div class="metric" style="flex:2">
-              <div class="metric-label">
+              <div class="metric-label" style="width:100%">
                 <div class="metric-title">키워드</div>
                 <div id="keywords" class="chips"></div>
               </div>
@@ -173,7 +177,7 @@
             <audio id="audioPlayer" controls preload="metadata"></audio>
             <div class="player-actions">
               <button id="downloadPNG" class="pill-btn">🖼️ PNG 내보내기</button>
-              <button id="downloadWAV" class="pill-btn">💿 WAV 다운로드</button>
+              <button id="downloadWAV" class="pill-btn" disabled>💿 WAV 다운로드</button>
             </div>
           </div>
         </div>
@@ -181,7 +185,7 @@
     </section>
 
     <!-- Calendar -->
-    <section id="calendar" class="panel" role="tabpanel" aria-labelledby="Calendar">
+    <section id="calendar" class="panel" role="tabpanel" aria-labelledby="tab-calendar">
       <div class="card">
         <div class="card-head">
           <h2>🗓️ 감정 캘린더</h2>
@@ -192,19 +196,24 @@
           <div id="calendarTitle" class="cal-title"></div>
           <button id="nextMonth" class="pill-btn small">다음 ▶</button>
         </div>
-        <div class="calendar-grid" id="calendarGrid" aria-label="감정 캘린더"></div>
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid" role="grid" aria-label="감정 캘린더"></div>
         <div id="calendarDayDetail" class="day-detail" hidden>
           <div class="day-detail-head">
             <div class="day-detail-title" id="dayDetailTitle"></div>
-            <button id="closeDayDetail" class="icon-btn">✖</button>
+            <button id="closeDayDetail" class="icon-btn" aria-label="상세 닫기">✖</button>
           </div>
-          <div id="dayEntries" class="entries-list compact"></div>
+          <div class="day-detail-body">
+            <div id="dayEntries" class="entries-list compact"></div>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- Archive -->
-    <section id="archive" class="panel" role="tabpanel" aria-labelledby="Archive">
+    <section id="archive" class="panel" role="tabpanel" aria-labelledby="tab-archive">
       <div class="card">
         <div class="card-head">
           <h2>📚 내 작품 아카이브</h2>
@@ -215,17 +224,17 @@
     </section>
 
     <!-- Insights -->
-    <section id="insights" class="panel" role="tabpanel" aria-labelledby="Insights">
+    <section id="insights" class="panel" role="tabpanel" aria-labelledby="tab-insights">
       <div class="grid-2">
         <div class="card">
           <div class="card-head">
             <h2>📊 감정 트렌드 & 통계</h2>
-            <div class="microcopy">최근 세션에서 감정 값과 다이어리 패턴을 보여줍니다.</div>
+            <div class="microcopy">최근 세션의 감정 값과 다이어리 패턴을 보여줍니다.</div>
           </div>
-          <canvas id="trendChart" width="900" height="300" aria-label="감정 트렌드 차트"></canvas>
+          <div class="chart-wrap"><canvas id="trendChart" width="900" height="300" aria-label="감정 트렌드 차트"></canvas></div>
           <div class="tiles" id="statsTiles"></div>
           <div class="subcharts">
-            <canvas id="freqChart" width="900" height="220" aria-label="기본 감정 빈도"></canvas>
+            <div class="chart-wrap"><canvas id="freqChart" width="900" height="220" aria-label="기본 감정 빈도"></canvas></div>
             <div id="dotMap" class="dot-map" aria-label="최근 30일 도트맵"></div>
           </div>
         </div>
@@ -239,7 +248,7 @@
     </section>
 
     <!-- Data -->
-    <section id="data" class="panel" role="tabpanel" aria-labelledby="Data">
+    <section id="data" class="panel" role="tabpanel" aria-labelledby="tab-data">
       <div class="card">
         <div class="card-head">
           <h2>🧰 데이터 백업/복원</h2>
@@ -247,10 +256,10 @@
         </div>
         <div class="btn-row wrap">
           <button id="backupBtn" class="pill-btn success">⬇️ 다이어리 백업(.json)</button>
-          <input type="file" id="restoreInput" accept=".json" hidden />
+          <input type="file" id="restoreInput" accept=".json,application/json" hidden />
           <button id="restoreBtn" class="pill-btn">⬆️ 다이어리 복원(.json)</button>
         </div>
-        <div class="microcopy">주의: 복원 시 현재 저장된 다이어리 데이터는 선택한 파일로 덮어쓰기 됩니다.</div>
+        <div class="microcopy" style="margin-top:.6rem">주의: 복원 시 현재 저장된 다이어리 데이터는 선택한 파일로 덮어쓰기 됩니다.</div>
       </div>
     </section>
   </main>
@@ -259,22 +268,22 @@
     <div>
       <strong>Heart's Melody</strong> · 개인정보는 로컬에만 저장되는 데모입니다.
     </div>
-    <div class="small">© 2025 Heart's Melody Prototype v2</div>
+    <div class="small">© 2025 Heart's Melody</div>
   </footer>
 
   <div id="toast" role="status" aria-live="polite"></div>
 
-  <div id="modal" class="modal" hidden>
+  <div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-content">
       <div class="modal-head">
-        <div class="modal-title">기록 수정</div>
-        <button id="modalClose" class="icon-btn">✖</button>
+        <div class="modal-title" id="modalTitle">기록 수정</div>
+        <button id="modalClose" class="icon-btn" aria-label="닫기">✖</button>
       </div>
       <div class="modal-body">
-        <div id="modalEmotion" class="emotion-grid compact"></div>
+        <div id="modalEmotion" class="emotion-grid compact" role="group" aria-label="감정 선택"></div>
         <div class="intensity-row" id="modalIntensityRow" hidden>
           <div class="microcopy">강도 다시 선택:</div>
-          <div class="intensity-buttons" id="modalIntensityButtons"></div>
+          <div class="intensity-buttons" id="modalIntensityButtons" role="group" aria-label="강도 선택"></div>
         </div>
         <label class="full">
           <span class="label">감정 노트</span>

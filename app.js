@@ -835,7 +835,7 @@ function drawTrend(entries) {
       const y = (h - 30) - (p.value / 100) * (h - 40);
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = cssVar("--accent", "#C2402A"); ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = cssVar("--accent", "#2E6B54"); ctx.lineWidth = 2; ctx.stroke();
   } else {
     ctx.fillStyle = cssVar("--muted", "#888");
     ctx.font = "500 14px Pretendard, sans-serif";
@@ -1100,7 +1100,7 @@ function drawGauge(canvas, value) {
   const start = -Math.PI / 2;
   const end = start + Math.PI * 2 * (value / 100);
   ctx.beginPath(); ctx.arc(cx, cy, r, start, end);
-  ctx.strokeStyle = cssVar("--accent", "#C2402A"); ctx.lineWidth = 10; ctx.lineCap = "round"; ctx.stroke();
+  ctx.strokeStyle = cssVar("--accent", "#2E6B54"); ctx.lineWidth = 10; ctx.lineCap = "round"; ctx.stroke();
   ctx.fillStyle = cssVar("--text", "#E6E6F0");
   ctx.font = "600 16px Pretendard, system-ui, sans-serif";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -1366,7 +1366,7 @@ $("#downloadPNG").addEventListener("click", () => {
   g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.55)");
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = "#e9ecff";
-  ctx.font = "600 40px Hahmlet, Georgia, serif";
+  ctx.font = '600 40px "Noto Serif KR", Georgia, serif';
   ctx.fillText($("#poemTitle").textContent, 40, h - 200);
   ctx.font = "500 20px Pretendard, system-ui";
   let y = h - 170;

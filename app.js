@@ -222,7 +222,7 @@ class EmotionPicker {
       if (!this.key || plutchikEmotions[this.key].base !== this.base) this.key = null;
       this._renderBase();
       this._renderIntensity();
-      this.onChange(this.key);
+      this.onChange(this.key, this.base);
     });
     this.intensityButtons.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-key]");
@@ -231,7 +231,7 @@ class EmotionPicker {
       this.base = plutchikEmotions[this.key].base;
       this._renderBase();
       this._renderIntensity();
-      this.onChange(this.key);
+      this.onChange(this.key, this.base);
     });
 
     this._renderBase();
@@ -258,11 +258,18 @@ class EmotionPicker {
     this.grid.innerHTML = "";
     baseEmotionOrder.forEach((base) => {
       const info = plutchikEmotions[mediumKeyOf(base)];
+      const selected = base === this.base;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "emotion-btn" + (base === this.base ? " selected" : "");
+      btn.className = "emotion-btn" + (selected ? " selected" : "");
       btn.dataset.base = base;
-      btn.setAttribute("aria-pressed", base === this.base ? "true" : "false");
+      btn.setAttribute("aria-pressed", selected ? "true" : "false");
+      if (selected) {
+        // tint the selection with the emotion's own color
+        btn.style.boxShadow = `0 0 0 2px ${info.color}, 0 6px 18px ${hexToRgba(info.color, 0.35)}`;
+        btn.style.background = hexToRgba(info.color, 0.14);
+        btn.style.borderColor = "transparent";
+      }
       btn.innerHTML =
         `<span class="emotion-emoji" aria-hidden="true">${info.emoji}</span>` +
         `<span class="emotion-name">${baseLabelKr[base]}</span>`;
@@ -281,11 +288,13 @@ class EmotionPicker {
     intensityOrder.forEach((inten) => {
       const k = keyFor(this.base, inten);
       const info = plutchikEmotions[k];
+      const selected = this.key === k;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "intensity-btn" + (this.key === k ? " selected" : "");
+      btn.className = "intensity-btn" + (selected ? " selected" : "");
       btn.dataset.key = k;
-      btn.setAttribute("aria-pressed", this.key === k ? "true" : "false");
+      btn.setAttribute("aria-pressed", selected ? "true" : "false");
+      if (selected) btn.style.background = info.color;
       btn.textContent = `${info.name} (${info.intensityKr})`;
       this.intensityButtons.appendChild(btn);
     });
@@ -294,42 +303,120 @@ class EmotionPicker {
 
 /* ===================== 4. Local AI response ===================== */
 const aiTones = {
-  default: { name: "AI 자동 선택" },
+  default: { name: "알아서 골라줘" },
   warm: { name: "따뜻하게" },
-  encouraging: { name: "격려하며" },
+  encouraging: { name: "힘이 나게" },
   humorous: { name: "재치있게" },
-  insightful: { name: "통찰력 있게" },
+  insightful: { name: "깊이 있게" },
+};
+
+const pickFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+/* Response banks — 8 emotions × 3 openings, intensity coloring,
+   3+3 middles, 5 tones × 3 closings. Combinations keep replies fresh
+   across hundreds of entries without any server. */
+const AI_OPENINGS = {
+  joy: [
+    "마음에 환한 빛이 스며든 하루였네요 {e}",
+    "오늘의 기쁨이 화면 너머까지 전해져요 {e}",
+    "좋은 일은 마음에 오래 담아둘수록 더 커진대요 {e}",
+  ],
+  trust: [
+    "누군가를, 그리고 스스로를 믿는 마음이 느껴져요 {e}",
+    "신뢰는 하루아침에 생기지 않죠. 그래서 더 귀한 감정이에요 {e}",
+    "기댈 수 있는 무언가가 있다는 건 정말 큰 힘이에요 {e}",
+  ],
+  fear: [
+    "불안한 마음을 안고도 오늘을 살아낸 당신, 그걸로 충분해요 {e}",
+    "두려움은 소중한 것을 지키고 싶다는 마음의 신호이기도 해요 {e}",
+    "무서울 땐 숨을 천천히. 지금 이 순간의 당신은 안전해요 {e}",
+  ],
+  surprise: [
+    "예상 밖의 파도가 하루를 스쳐 지나갔군요 {e}",
+    "놀란 마음은 천천히 가라앉혀도 괜찮아요 {e}",
+    "뜻밖의 일은 때로 새로운 문을 열어주기도 해요 {e}",
+  ],
+  sadness: [
+    "마음이 무거운 날엔, 무거운 채로 있어도 괜찮아요 {e}",
+    "슬픔을 기록할 수 있다는 건 이미 자신을 돌보고 있다는 뜻이에요 {e}",
+    "눈물도 마음이 스스로를 씻어내는 방법 중 하나예요 {e}",
+  ],
+  disgust: [
+    "거슬리는 마음이 들 땐, 거리를 두는 것도 지혜예요 {e}",
+    "싫은 건 싫다고 느껴도 돼요. 감정에는 늘 이유가 있으니까요 {e}",
+    "불편함을 알아차렸다는 건 당신의 기준이 분명하다는 증거예요 {e}",
+  ],
+  anger: [
+    "분노는 지켜야 할 경계가 침범당했다는 신호예요 {e}",
+    "화가 났다는 건 그만큼 당신에게 중요한 일이었다는 뜻이죠 {e}",
+    "뜨거운 마음을 글로 옮긴 것만으로도 이미 한 걸음 물러선 거예요 {e}",
+  ],
+  anticipation: [
+    "설레는 기대가 잔잔히 차오르고 있네요 {e}",
+    "내일을 기다리는 마음, 그 자체로 이미 선물이에요 {e}",
+    "기대는 마음이 미래를 향해 내미는 손이에요 {e}",
+  ],
+};
+
+const AI_INTENSITY = {
+  low: "잔잔하게 스며든 감정이지만, 작은 물결도 소중해요.",
+  high: "이렇게 강하게 느껴진 감정은, 그만큼 큰 의미가 있다는 뜻이에요.",
+};
+
+const AI_MIDDLES_WITH_NOTE = [
+  "남겨주신 글을 읽었어요 — “{note}”. 그렇게 느끼는 건 아주 자연스러운 일이에요.",
+  "“{note}” — 이 문장 안에 오늘의 당신이 고스란히 담겨 있네요.",
+  "적어주신 이야기를 곱씹어 봤어요. “{note}” … 충분히 그럴 만한 하루였어요.",
+];
+const AI_MIDDLES_NO_NOTE = [
+  "짧게라도 마음을 적어두면, 나중의 나에게 좋은 단서가 되어 줘요.",
+  "오늘은 감정만 남겨도 충분해요. 기록했다는 사실이 중요하니까요.",
+  "말로 다 못 한 마음이 있다면, 다음엔 딱 한 줄만 더 남겨봐요.",
+];
+
+const AI_CLOSINGS = {
+  warm: [
+    "오늘은 스스로에게 조금 더 다정해도 좋아요. 따뜻한 차 한 잔과 함께 쉬어가요.",
+    "충분히 잘하고 있어요. 오늘 하루는 이불 속에서 살살 접어두세요.",
+    "당신의 마음이 편안한 밤을 보내길 바라요. 내일 또 만나요.",
+  ],
+  encouraging: [
+    "한 걸음이면 충분해요. 오늘의 기록이 내일의 나를 바꿉니다!",
+    "지금의 속도로 충분해요. 멈추지 않는 게 가장 어려운 일이거든요.",
+    "이렇게 자신을 들여다보는 사람은 반드시 앞으로 나아가요. 응원할게요!",
+  ],
+  humorous: [
+    "마음 날씨가 흐려도 우산은 챙겼잖아요 ☔️ 내일 맑음 확률, 대략 73%!",
+    "감정 근육 운동 오늘 한 세트 완료! 내일도 마음 헬스장에서 만나요 💪",
+    "오늘의 감정 스탬프 적립 완료. 열 개 모으면… 더 단단한 내가 온대요 😎",
+  ],
+  insightful: [
+    "감정은 방향을 알려주는 나침반이에요. 오늘의 신호를 기억해 두면 다음 선택이 선명해져요.",
+    "기록은 감정을 없애는 일이 아니라, 감정과 나 사이에 공간을 만드는 일이에요.",
+    "지금의 감정은 지나가지만, 오늘 알아차린 것은 남아요. 그게 자라는 거예요.",
+  ],
+  default: [
+    "오늘의 감정을 잘 기록하셨어요. 기록이 쌓이면 당신만의 지도가 됩니다.",
+    "감정을 알아차리는 것만으로도 절반은 돌본 거예요. 잘하셨어요.",
+    "꾸준한 기록이 마음의 근력을 만들어요. 오늘도 한 칸을 채웠네요.",
+  ],
 };
 
 function generateAiResponse(emotionKey, memo, toneKey = "default") {
   const emo = plutchikEmotions[emotionKey];
+  const base = emo?.base || "joy";
   const emoji = emo?.emoji || "✨";
   const note = (memo || "").trim().slice(0, 240);
 
-  const opening = {
-    joy: `지금 마음에 빛이 퍼지고 있어요 ${emoji}`,
-    trust: `스스로와 세상을 신뢰하는 느낌이 와닿네요 ${emoji}`,
-    fear: `불안과 두려움 속에서도 숨을 고른 당신, 충분히 잘하고 있어요 ${emoji}`,
-    surprise: `예상치 못한 파도가 스쳐갔군요 ${emoji}`,
-    sadness: `마음이 무거운 날엔 그대로 머물러도 괜찮아요 ${emoji}`,
-    disgust: `거슬리는 감정이 올라올 땐 거리를 두는 것도 돌봄이에요 ${emoji}`,
-    anger: `분노는 경계가 필요하다는 신호예요 ${emoji}`,
-    anticipation: `좋은 기대가 잔잔히 모이고 있네요 ${emoji}`,
-  }[emo?.base || "joy"];
-
-  const middle = note
-    ? `당신의 메모를 읽으며 느꼈어요: “${note}”. 이 감정은 충분히 타당하고, 지금의 나를 보호하려는 자연스러운 반응이에요.`
-    : `짧게라도 마음을 적어두면, 나중에 스스로에게 큰 단서가 되어 줄 거예요.`;
-
-  const closing = {
-    warm: `오늘은 스스로에게 조금 더 다정해도 좋아요. 따뜻한 물 한 잔과 함께, 숨을 길게 내쉬어 볼까요?`,
-    encouraging: `한 걸음만 더, 지금의 리듬으로 충분해요. 작은 실천이 내일의 나를 바꿉니다!`,
-    humorous: `마음 날씨가 살짝 흐려도, 우산은 우리에게 있잖아요 ☔️ 내일은 분명 맑음 확률 73%쯤?!`,
-    insightful: `감정은 방향을 알려주는 나침반이에요. 오늘의 신호를 간직해 두면, 다음 선택이 한결 선명해집니다.`,
-    default: `오늘의 감정을 잘 기록하셨어요. 이 기록이 쌓이면 당신만의 길이 더 분명해질 거예요.`,
-  }[toneKey] || `오늘의 감정을 잘 기록하셨어요.`;
-
-  return `${opening}\n${middle}\n${closing}`;
+  const parts = [pickFrom(AI_OPENINGS[base]).replace("{e}", emoji)];
+  if (emo && AI_INTENSITY[emo.intensity]) parts.push(AI_INTENSITY[emo.intensity]);
+  parts.push(
+    note
+      ? pickFrom(AI_MIDDLES_WITH_NOTE).replace("{note}", note)
+      : pickFrom(AI_MIDDLES_NO_NOTE)
+  );
+  parts.push(pickFrom(AI_CLOSINGS[toneKey] || AI_CLOSINGS.default));
+  return parts.join("\n");
 }
 
 /* ===================== 5. Diary ===================== */
@@ -340,11 +427,68 @@ const aiToneEl = $("#aiTone");
 const aiBox = $("#aiResponseBox");
 const aiBody = $("#aiResponse");
 
+/* Short Plutchik-based descriptions shown under the emotion grid. */
+const emotionDescriptions = {
+  joy: "기쁨 — 마음이 밝아지고 에너지가 차오르는 감정. 좋은 것을 더 가까이하고 싶게 해요.",
+  trust: "신뢰 — 사람이나 상황에 안심하고 기댈 수 있다는 느낌. 관계를 단단하게 만들어요.",
+  fear: "두려움 — 위험으로부터 나를 지키려는 감정. 조심하라는 마음의 경보예요.",
+  surprise: "놀람 — 예상 밖의 일에 주의를 모으는 감정. 새로움의 문턱이기도 해요.",
+  sadness: "슬픔 — 잃어버린 것을 애도하고 회복을 준비하는 감정. 쉼이 필요하다는 신호예요.",
+  disgust: "혐오 — 해로운 것을 밀어내려는 감정. 나의 기준과 경계를 알려줘요.",
+  anger: "분노 — 부당함에 맞서고 경계를 지키려는 감정. 무엇이 중요한지 알려줘요.",
+  anticipation: "기대 — 다가올 일을 준비하며 설레는 감정. 마음이 미래를 향해 움직이고 있어요.",
+};
+
+const emotionDescEl = $("#emotionDesc");
 const composerPicker = new EmotionPicker({
   grid: $("#emotionSelector"),
   intensityRow: $("#intensityRow"),
   intensityButtons: $("#intensityButtons"),
+  onChange: (key, base) => {
+    if (!base) { emotionDescEl.textContent = ""; return; }
+    const desc = emotionDescriptions[base] || "";
+    emotionDescEl.textContent = key ? `${plutchikEmotions[key].full} · ${desc}` : desc;
+  },
 });
+
+/* ----- 오늘의 글감 (writing prompts) ----- */
+const WRITING_PROMPTS = [
+  "오늘 나를 가장 웃게 한 순간은 언제였나요?",
+  "지금 머릿속을 가장 많이 차지하는 생각은 무엇인가요?",
+  "오늘의 나에게 점수를 준다면 몇 점? 그 이유는요?",
+  "요즘 가장 고마운 사람은 누구인가요?",
+  "오늘 몸이 보낸 신호가 있었나요? 피곤함, 설렘, 긴장 같은 것들요.",
+  "만약 오늘을 다시 산다면 무엇을 바꾸고 싶나요?",
+  "최근에 나를 놀라게 한 일은 무엇인가요?",
+  "지금 창밖 풍경은 어떤가요? 그걸 보며 드는 생각은?",
+  "오늘 가장 오래 머문 감정에 이름을 붙인다면?",
+  "내일의 나에게 한 문장을 남긴다면?",
+  "요즘 나를 지치게 하는 것과 채워주는 것은 무엇인가요?",
+  "오늘 들은 말 중 마음에 남은 한마디는?",
+  "지금 가장 하고 싶은 일 한 가지는 무엇인가요?",
+  "최근에 포기한 것이 있나요? 그 선택은 어땠나요?",
+  "오늘의 날씨와 내 마음의 날씨는 닮았나요?",
+  "어릴 적의 내가 지금의 나를 본다면 뭐라고 할까요?",
+  "반복되는 걱정 중에, 정말 내 힘으로 바꿀 수 있는 건 무엇일까요?",
+  "오늘 스쳐 지나간 사소한 행복이 있었나요?",
+  "지금 내 에너지는 몇 퍼센트인가요? 충전이 필요한 곳은 어디일까요?",
+  "최근 나를 성장시킨 실수는 무엇인가요?",
+  "오늘 누군가에게 하지 못한 말이 있나요?",
+  "일주일 뒤의 나는 오늘을 어떻게 기억할까요?",
+];
+
+const promptTextEl = $("#promptText");
+function showRandomPrompt() {
+  const next = pickFrom(WRITING_PROMPTS.filter((p) => p !== promptTextEl.textContent));
+  promptTextEl.textContent = next;
+}
+$("#promptRefresh").addEventListener("click", showRandomPrompt);
+promptTextEl.addEventListener("click", () => {
+  memoEl.value = (memoEl.value ? memoEl.value.trimEnd() + "\n\n" : "") + promptTextEl.textContent + "\n";
+  memoEl.focus();
+  toast("글감을 노트에 담았어요 ✍️");
+});
+showRandomPrompt();
 
 function entryCardHtml(e, { withTone = true } = {}) {
   const info = plutchikEmotions[e.emotion] || {};
@@ -364,7 +508,7 @@ function entryCardHtml(e, { withTone = true } = {}) {
       </div>
     </div>
     ${e.memo ? `<div class="entry-body">${escapeHtml(e.memo)}</div>` : ""}
-    ${e.aiResponse ? `<div class="ai-box"><div class="ai-title">AI 응답</div><div class="ai-body">${escapeHtml(e.aiResponse)}</div></div>` : ""}
+    ${e.aiResponse ? `<div class="ai-box"><div class="ai-title">🕯️ 마음 친구의 답장</div><div class="ai-body">${escapeHtml(e.aiResponse)}</div></div>` : ""}
   `;
 }
 
@@ -390,7 +534,7 @@ function filteredEntries() {
 function renderEntries() {
   const items = filteredEntries();
   if (items.length === 0) {
-    entriesList.innerHTML = `<div class="empty">아직 기록이 없습니다. 오늘의 감정을 남겨보세요 😊</div>`;
+    entriesList.innerHTML = `<div class="empty">아직 기록이 없어요.<br>오늘의 마음을 첫 페이지에 남겨보세요 🌙</div>`;
     return;
   }
   entriesList.innerHTML = "";
@@ -417,8 +561,9 @@ function saveDiaryEntry() {
   aiBox.hidden = false;
   memoEl.value = "";
   composerPicker.clear();
+  emotionDescEl.textContent = "";
   refreshDiaryViews();
-  toast("감정이 기록되었습니다! 💾");
+  toast("오늘의 마음을 기록했어요 💌");
 }
 
 function deleteEntry(id) {
@@ -458,6 +603,7 @@ memoEl.addEventListener("keydown", (e) => {
 $("#clearDiary").addEventListener("click", () => {
   memoEl.value = "";
   composerPicker.clear();
+  emotionDescEl.textContent = "";
   aiBox.hidden = true;
 });
 $("#clearFilter").addEventListener("click", () => {
@@ -683,19 +829,17 @@ function drawTrend(entries) {
   }
   const sessions = Store.getSessions().slice(-60);
   if (sessions.length >= 2) {
-    const grad = ctx.createLinearGradient(40, 0, w - 10, 0);
-    grad.addColorStop(0, "#7C83FF"); grad.addColorStop(1, "#9B5DE5");
     ctx.beginPath();
     sessions.forEach((p, i) => {
       const x = 40 + i * ((w - 60) / (sessions.length - 1));
       const y = (h - 30) - (p.value / 100) * (h - 40);
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = cssVar("--accent", "#2E6B54"); ctx.lineWidth = 2; ctx.stroke();
   } else {
     ctx.fillStyle = cssVar("--muted", "#888");
-    ctx.font = "500 14px Inter, sans-serif";
-    ctx.fillText("스튜디오에서 일기를 작성하면 감정 추세가 그려집니다.", 56, h / 2);
+    ctx.font = "500 14px Pretendard, sans-serif";
+    ctx.fillText("스튜디오에서 글을 쓰면 마음의 흐름이 이곳에 그려져요.", 56, h / 2);
   }
 }
 
@@ -709,8 +853,8 @@ function drawFrequency(entries) {
     .filter((x) => x.count > 0);
   if (counts.length === 0) {
     ctx.fillStyle = cssVar("--muted", "#888");
-    ctx.font = "500 14px Inter, sans-serif";
-    ctx.fillText("감정을 기록하면 빈도 그래프가 표시됩니다.", 56, H / 2);
+    ctx.font = "500 14px Pretendard, sans-serif";
+    ctx.fillText("감정을 기록하면 자주 만나는 감정이 여기에 보여요.", 56, H / 2);
     return;
   }
   const maxCount = Math.max(1, ...counts.map((x) => x.count));
@@ -723,7 +867,7 @@ function drawFrequency(entries) {
     ctx.fillStyle = plutchikEmotions[mediumKeyOf(item.base)]?.color || "#7C83FF";
     ctx.fillRect(x, y, barW * 0.7, barH);
     ctx.fillStyle = textColor;
-    ctx.font = "600 12px Inter, sans-serif";
+    ctx.font = "600 12px Pretendard, sans-serif";
     ctx.fillText(baseLabelKr[item.base], x, H - 20);
     ctx.fillText(`${item.count}회`, x, y - 6);
   });
@@ -766,7 +910,7 @@ function writtenInsights(entries) {
   const items = [];
 
   if (entries.length === 0) {
-    items.push(["🌱", "아직 데이터가 없어요. 감정을 기록하면 패턴 분석이 시작됩니다."]);
+    items.push(["🌱", "아직 이야기가 쌓이지 않았어요. 감정을 기록하기 시작하면, 이곳에서 당신만의 패턴을 읽어드릴게요."]);
   } else {
     // Most frequent base emotion
     const tally = {};
@@ -804,6 +948,25 @@ function writtenInsights(entries) {
     if (withMemo > 0) {
       const pct = Math.round((withMemo / entries.length) * 100);
       items.push(["🖋️", `기록의 ${pct}%에 메모를 함께 남겼어요. 맥락이 풍부할수록 회고가 깊어집니다.`]);
+    }
+
+    // Rhythm: which weekday / time of day you tend to journal
+    if (entries.length >= 5) {
+      const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
+      const byDay = new Array(7).fill(0);
+      const bySlot = { 아침: 0, 낮: 0, 저녁: 0, 밤: 0 };
+      entries.forEach((e) => {
+        const d = new Date(e.date);
+        byDay[d.getDay()]++;
+        const h = d.getHours();
+        if (h >= 5 && h < 12) bySlot["아침"]++;
+        else if (h < 17) bySlot["낮"]++;
+        else if (h < 22) bySlot["저녁"]++;
+        else bySlot["밤"]++;
+      });
+      const topDay = byDay.indexOf(Math.max(...byDay));
+      const topSlot = Object.entries(bySlot).sort((a, b) => b[1] - a[1])[0][0];
+      items.push(["🕰️", `주로 <strong>${dayNames[topDay]}요일</strong>, <strong>${topSlot}</strong> 시간에 마음을 정리하는 편이에요.`]);
     }
   }
 
@@ -936,12 +1099,10 @@ function drawGauge(canvas, value) {
   ctx.strokeStyle = cssVar("--border", "rgba(255,255,255,.15)"); ctx.lineWidth = 10; ctx.stroke();
   const start = -Math.PI / 2;
   const end = start + Math.PI * 2 * (value / 100);
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, "#7C83FF"); grad.addColorStop(1, "#9B5DE5");
   ctx.beginPath(); ctx.arc(cx, cy, r, start, end);
-  ctx.strokeStyle = grad; ctx.lineWidth = 10; ctx.lineCap = "round"; ctx.stroke();
+  ctx.strokeStyle = cssVar("--accent", "#2E6B54"); ctx.lineWidth = 10; ctx.lineCap = "round"; ctx.stroke();
   ctx.fillStyle = cssVar("--text", "#E6E6F0");
-  ctx.font = "600 16px Inter, system-ui, sans-serif";
+  ctx.font = "600 16px Pretendard, system-ui, sans-serif";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillText(`${Math.round(value)}`, cx, cy);
   ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
@@ -954,7 +1115,10 @@ const Poem = {
     return (text.trim().split(/[\n.]/)[0] || "제목 미정").slice(0, 22);
   },
   generate(text, style, moodLabel) {
-    const images = ["빛", "그늘", "바람", "창가", "숨결", "파도", "별빛", "거울", "흔적"];
+    const images = [
+      "빛", "그늘", "바람", "창가", "숨결", "파도", "별빛", "거울", "흔적",
+      "노을", "골목", "계절", "물결", "새벽", "온기", "달빛", "우산", "엽서",
+    ];
     const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
     const moodWord = moodLabel === "기쁨" ? "따스한" : moodLabel === "우울" ? "서늘한" : "잔잔한";
     const tokens = extractKeywords(text);
@@ -1091,26 +1255,27 @@ function mulberry32(a) {
 }
 
 const Visual = {
+  // Restrained "ink-wash" palettes per mood — muted, editorial tones.
   draw(canvas, mood = "차분", seed = 1) {
     const ctx = canvas.getContext("2d");
     const w = canvas.width, h = canvas.height;
     const g = ctx.createLinearGradient(0, 0, w, h);
-    if (mood === "기쁨") { g.addColorStop(0, "#ff9a9e"); g.addColorStop(1, "#fad0c4"); }
-    else if (mood === "우울") { g.addColorStop(0, "#0f2027"); g.addColorStop(1, "#2c5364"); }
-    else { g.addColorStop(0, "#667eea"); g.addColorStop(1, "#764ba2"); }
+    if (mood === "기쁨") { g.addColorStop(0, "#E9C46A"); g.addColorStop(1, "#D96C47"); }
+    else if (mood === "우울") { g.addColorStop(0, "#1E2A38"); g.addColorStop(1, "#41556B"); }
+    else { g.addColorStop(0, "#4A5568"); g.addColorStop(1, "#8E9AAF"); }
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     const rng = mulberry32(Math.floor(seed) % 0xffffffff);
     for (let i = 0; i < 12; i++) {
-      const x = rng() * w, y = rng() * h, r = 40 + rng() * 120;
-      const hue = mood === "기쁨" ? 40 + rng() * 60 : mood === "우울" ? 200 + rng() * 40 : 270 + rng() * 30;
+      const x = rng() * w, y = rng() * h, r = 40 + rng() * 130;
+      const hue = mood === "기쁨" ? 22 + rng() * 40 : mood === "우울" ? 205 + rng() * 30 : 200 + rng() * 40;
       const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
-      grd.addColorStop(0, `hsla(${hue}, 85%, 70%, .55)`);
-      grd.addColorStop(1, `hsla(${hue}, 85%, 50%, 0)`);
+      grd.addColorStop(0, `hsla(${hue}, 55%, 68%, .4)`);
+      grd.addColorStop(1, `hsla(${hue}, 55%, 50%, 0)`);
       ctx.globalCompositeOperation = "screen";
       ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalCompositeOperation = "lighter";
-    ctx.fillStyle = "rgba(255,255,255,.03)";
+    ctx.fillStyle = "rgba(255,255,255,.025)";
     for (let y = 0; y < h; y += 3) ctx.fillRect(0, y, w, 1);
     ctx.globalCompositeOperation = "source-over";
   },
@@ -1146,9 +1311,11 @@ $("#genPoem").addEventListener("click", () => {
   const text = diaryEl.value.trim();
   if (!text) { toast("먼저 일기를 적어주세요"); return; }
   const emo = analyzeEmotion(text);
-  $("#poemOutput").textContent = Poem.generate(text, $("#poemStyle").value, emo.label);
+  const out = $("#poemOutput");
+  out.textContent = Poem.generate(text, $("#poemStyle").value, emo.label);
+  out.dataset.generated = "1";
   $("#poemTitle").textContent = Poem.titleFrom(text);
-  toast("시를 생성했어요 ✨");
+  toast("당신의 하루가 시가 되었어요 ✒️");
 });
 
 let lastWavBlob = null;
@@ -1199,9 +1366,9 @@ $("#downloadPNG").addEventListener("click", () => {
   g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.55)");
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = "#e9ecff";
-  ctx.font = '700 40px "Playfair Display", Georgia, serif';
+  ctx.font = '600 40px "Noto Serif KR", Georgia, serif';
   ctx.fillText($("#poemTitle").textContent, 40, h - 200);
-  ctx.font = "500 20px Inter, system-ui";
+  ctx.font = "500 20px Pretendard, system-ui";
   let y = h - 170;
   $("#poemOutput").textContent.split("\n").forEach((line) => { ctx.fillText(line, 40, y); y += 24; });
   const a = document.createElement("a");
@@ -1222,7 +1389,7 @@ function blobToDataUrl(blob) {
 
 $("#saveWork").addEventListener("click", async () => {
   const poem = $("#poemOutput").textContent.trim();
-  if (!poem || poem === "시가 여기에 표시됩니다.") { toast("시를 먼저 생성해주세요"); return; }
+  if (!poem || $("#poemOutput").dataset.generated !== "1") { toast("시를 먼저 지어주세요"); return; }
   const title = $("#poemTitle").textContent || "무제";
   const diary = diaryEl.value.trim();
   const { label } = analyzeEmotion(diary);
@@ -1278,7 +1445,7 @@ function renderArchive() {
   grid.innerHTML = "";
   const works = Store.getWorks();
   if (works.length === 0) {
-    grid.innerHTML = `<div class="empty">아직 저장된 작품이 없습니다. 스튜디오에서 시·음악·배경을 만들어 저장해보세요 🎨</div>`;
+    grid.innerHTML = `<div class="empty">전시관이 아직 비어 있어요.<br>스튜디오에서 시와 음악, 배경을 만들어 첫 작품을 걸어보세요 🖼️</div>`;
     return;
   }
   works.forEach((w) => {
@@ -1309,6 +1476,7 @@ function renderArchive() {
     loadBtn.addEventListener("click", () => {
       $("#poemTitle").textContent = w.title;
       $("#poemOutput").textContent = w.poem;
+      $("#poemOutput").dataset.generated = "1";
       Visual.draw($("#bgCanvas"), w.mood, w.seed || 1);
       $("#bgCanvas").dataset.seed = String(w.seed || 1);
       if (w.audio) { $("#audioPlayer").src = w.audio; $("#downloadWAV").disabled = true; }
@@ -1345,8 +1513,8 @@ function renderArchive() {
     btn.setAttribute("aria-label", theme === "dark" ? "라이트 테마로 전환" : "다크 테마로 전환");
   };
   const saved = Store.read(Store.KEYS.theme, null);
-  const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
-  apply(saved || (prefersLight ? "light" : "dark"));
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  apply(saved || (prefersDark ? "dark" : "light"));
   btn.addEventListener("click", () => {
     const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
     apply(next);
@@ -1381,6 +1549,7 @@ $$(".tab").forEach((tab) => {
 });
 
 // Initial paint
+$("#footYear").textContent = new Date().getFullYear();
 updateAnalysis({ persist: false });
 Visual.draw($("#bgCanvas"), "차분", 1);
 refreshDiaryViews();

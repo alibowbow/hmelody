@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" data-theme="dark">
+<html lang="ko" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,11 +10,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <!-- Load web fonts without blocking render/scripts: app boots on system fonts,
-       then swaps in Gowun Batang / Pretendard when (and if) the CDN responds. -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" media="print" onload="this.media='all'">
+       then swaps in Hahmlet / Pretendard when (and if) the CDN responds. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" media="print" onload="this.media='all'">
   <noscript>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   </noscript>
   <link rel="stylesheet" href="./styles.css" />
@@ -22,7 +22,7 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="logo" aria-hidden="true">🎵</div>
+      <div class="logo" aria-hidden="true">♪</div>
       <div class="title">마음의 선율 <span class="badge">Heart's Melody</span></div>
     </div>
     <nav class="tabs" role="tablist" aria-label="주요 섹션">
@@ -281,7 +281,7 @@
     <div>
       <strong>마음의 선율</strong> · 당신의 기록은 이 기기 밖으로 나가지 않아요.
     </div>
-    <div class="small">© 2025 Heart's Melody</div>
+    <div class="small">© <span id="footYear">2026</span> Heart's Melody</div>
   </footer>
 
   <div id="toast" role="status" aria-live="polite"></div>

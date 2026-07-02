@@ -829,15 +829,13 @@ function drawTrend(entries) {
   }
   const sessions = Store.getSessions().slice(-60);
   if (sessions.length >= 2) {
-    const grad = ctx.createLinearGradient(40, 0, w - 10, 0);
-    grad.addColorStop(0, "#7C83FF"); grad.addColorStop(1, "#9B5DE5");
     ctx.beginPath();
     sessions.forEach((p, i) => {
       const x = 40 + i * ((w - 60) / (sessions.length - 1));
       const y = (h - 30) - (p.value / 100) * (h - 40);
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = cssVar("--accent", "#C2402A"); ctx.lineWidth = 2; ctx.stroke();
   } else {
     ctx.fillStyle = cssVar("--muted", "#888");
     ctx.font = "500 14px Pretendard, sans-serif";
@@ -1101,10 +1099,8 @@ function drawGauge(canvas, value) {
   ctx.strokeStyle = cssVar("--border", "rgba(255,255,255,.15)"); ctx.lineWidth = 10; ctx.stroke();
   const start = -Math.PI / 2;
   const end = start + Math.PI * 2 * (value / 100);
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, "#7C83FF"); grad.addColorStop(1, "#9B5DE5");
   ctx.beginPath(); ctx.arc(cx, cy, r, start, end);
-  ctx.strokeStyle = grad; ctx.lineWidth = 10; ctx.lineCap = "round"; ctx.stroke();
+  ctx.strokeStyle = cssVar("--accent", "#C2402A"); ctx.lineWidth = 10; ctx.lineCap = "round"; ctx.stroke();
   ctx.fillStyle = cssVar("--text", "#E6E6F0");
   ctx.font = "600 16px Pretendard, system-ui, sans-serif";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -1259,26 +1255,27 @@ function mulberry32(a) {
 }
 
 const Visual = {
+  // Restrained "ink-wash" palettes per mood — muted, editorial tones.
   draw(canvas, mood = "차분", seed = 1) {
     const ctx = canvas.getContext("2d");
     const w = canvas.width, h = canvas.height;
     const g = ctx.createLinearGradient(0, 0, w, h);
-    if (mood === "기쁨") { g.addColorStop(0, "#ff9a9e"); g.addColorStop(1, "#fad0c4"); }
-    else if (mood === "우울") { g.addColorStop(0, "#0f2027"); g.addColorStop(1, "#2c5364"); }
-    else { g.addColorStop(0, "#667eea"); g.addColorStop(1, "#764ba2"); }
+    if (mood === "기쁨") { g.addColorStop(0, "#E9C46A"); g.addColorStop(1, "#D96C47"); }
+    else if (mood === "우울") { g.addColorStop(0, "#1E2A38"); g.addColorStop(1, "#41556B"); }
+    else { g.addColorStop(0, "#4A5568"); g.addColorStop(1, "#8E9AAF"); }
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     const rng = mulberry32(Math.floor(seed) % 0xffffffff);
     for (let i = 0; i < 12; i++) {
-      const x = rng() * w, y = rng() * h, r = 40 + rng() * 120;
-      const hue = mood === "기쁨" ? 40 + rng() * 60 : mood === "우울" ? 200 + rng() * 40 : 270 + rng() * 30;
+      const x = rng() * w, y = rng() * h, r = 40 + rng() * 130;
+      const hue = mood === "기쁨" ? 22 + rng() * 40 : mood === "우울" ? 205 + rng() * 30 : 200 + rng() * 40;
       const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
-      grd.addColorStop(0, `hsla(${hue}, 85%, 70%, .55)`);
-      grd.addColorStop(1, `hsla(${hue}, 85%, 50%, 0)`);
+      grd.addColorStop(0, `hsla(${hue}, 55%, 68%, .4)`);
+      grd.addColorStop(1, `hsla(${hue}, 55%, 50%, 0)`);
       ctx.globalCompositeOperation = "screen";
       ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalCompositeOperation = "lighter";
-    ctx.fillStyle = "rgba(255,255,255,.03)";
+    ctx.fillStyle = "rgba(255,255,255,.025)";
     for (let y = 0; y < h; y += 3) ctx.fillRect(0, y, w, 1);
     ctx.globalCompositeOperation = "source-over";
   },
@@ -1369,7 +1366,7 @@ $("#downloadPNG").addEventListener("click", () => {
   g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.55)");
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = "#e9ecff";
-  ctx.font = '700 40px "Playfair Display", Georgia, serif';
+  ctx.font = "600 40px Hahmlet, Georgia, serif";
   ctx.fillText($("#poemTitle").textContent, 40, h - 200);
   ctx.font = "500 20px Pretendard, system-ui";
   let y = h - 170;
@@ -1516,8 +1513,8 @@ function renderArchive() {
     btn.setAttribute("aria-label", theme === "dark" ? "라이트 테마로 전환" : "다크 테마로 전환");
   };
   const saved = Store.read(Store.KEYS.theme, null);
-  const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
-  apply(saved || (prefersLight ? "light" : "dark"));
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  apply(saved || (prefersDark ? "dark" : "light"));
   btn.addEventListener("click", () => {
     const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
     apply(next);
@@ -1552,6 +1549,7 @@ $$(".tab").forEach((tab) => {
 });
 
 // Initial paint
+$("#footYear").textContent = new Date().getFullYear();
 updateAnalysis({ persist: false });
 Visual.draw($("#bgCanvas"), "차분", 1);
 refreshDiaryViews();
